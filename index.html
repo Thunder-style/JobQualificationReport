@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>职业发展全景图 Pro (最终交付版)</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #f3f6fc;
+            --primary-blue: #3b82f6;
+            --assist-purple: #8b5cf6;
+            --spec-cyan: #06b6d4;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --success-bg: #d1fae5;
+            --success-text: #059669;
+            --danger-bg: #fee2e2;
+            --danger-text: #ef4444;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background: var(--bg-body);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* --- Dashboard --- */
+        .dashboard-container {
+            width: 100%; padding: 10px 0; z-index: 50;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+        .dashboard-card {
+            width: 96%; max-width: 1600px; margin: 0 auto;
+            display: flex; align-items: flex-start; gap: 20px;
+        }
+        .user-profile { 
+            flex-shrink: 0; width: 220px; display: flex; align-items: center; gap: 15px; 
+            padding-right: 20px; border-right: 1px solid #e2e8f0; height: 80px; 
+        }
+        .avatar-box {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white; font-size: 18px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.2);
+        }
+        .user-info h2 { margin: 0; font-size: 16px; color: var(--text-main); }
+        .user-info p { margin: 4px 0; font-size: 12px; color: var(--text-sub); }
+        .capsule { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-right: 5px; }
+        .capsule-blue { background: #eff6ff; color: #2563eb; }
+        .stats-grid { flex: 1; display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px 20px; }
+        .stat-item { display: flex; flex-direction: column; gap: 4px; }
+        .stat-label { font-size: 11px; color: var(--text-sub); display: block; }
+        .stat-value { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .stat-value.highlight { color: #2563eb; font-family: 'DIN Alternate', sans-serif; font-size: 14px; }
+        .stat-value.long-text { font-size: 11px; line-height: 1.4; color: #475569; background: #f8fafc; padding: 4px 8px; border-radius: 4px; }
+        .span-3 { grid-column: span 3; }
+
+        /* --- Stage --- */
+        .stage-wrapper {
+            flex: 1; position: relative; overflow-y: auto; overflow-x: hidden;
+            display: flex; justify-content: center; padding-bottom: 20px;
+            scrollbar-width: thin;
+        }
+        .stage-content {
+            position: relative; 
+            width: 1400px; 
+            padding-top: 50px; padding-bottom: 80px;
+            display: flex; justify-content: center; align-items: flex-end;
+            padding-right: 450px; /* 右侧留白给卡片 */
+            padding-left: 50px;
+        }
+
+        /* 布局: 专责(左) - 助理(中) - 500KV(右) */
+        .tracks-layout {
+            display: grid; 
+            grid-template-columns: 240px 240px 300px; 
+            gap: 50px; 
+            position: relative; 
+            z-index: 10;
+        }
+
+        .track-col { display: flex; flex-direction: column-reverse; position: relative; padding-bottom: 40px; }
+        
+        .track-footer {
+            position: absolute; bottom: 0; width: 100%; text-align: center;
+            font-size: 14px; font-weight: 800; color: var(--text-main); padding-top: 15px; border-top: 3px solid;
+        }
+        .t-assist .track-footer { color: var(--assist-purple); border-color: rgba(139, 92, 246, 0.4); }
+        .t-main .track-footer { color: var(--primary-blue); border-color: rgba(59, 130, 246, 0.4); }
+        .t-spec .track-footer { color: var(--spec-cyan); border-color: rgba(6, 182, 212, 0.4); }
+
+        .track-line { position: absolute; top: 0; bottom: 40px; left: 50%; width: 2px; z-index: -1; transform: translateX(-1px); }
+        .t-main .track-line { background: linear-gradient(to top, var(--primary-blue) 0%, rgba(59,130,246,0.1) 100%); width: 4px; transform: translateX(-2px); }
+        .t-assist .track-line { background: linear-gradient(to top, var(--assist-purple) 0%, rgba(139,92,246,0.1) 100%); }
+        .t-spec .track-line { background: linear-gradient(to top, var(--spec-cyan) 0%, rgba(6,182,212,0.1) 100%); }
+
+        .node-slot { height: 60px; display: flex; align-items: center; justify-content: center; position: relative; gap: 10px; }
+        .node-card {
+            width: 180px; height: 40px; background: white; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid rgba(226, 232, 240, 0.8);
+            font-size: 13px; color: var(--text-main); font-weight: 500;
+        }
+        .node-card.split-mode { width: 135px; font-size: 12px; padding: 0 4px; }
+        .node-card::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; }
+        .t-assist .node-card::before { background: var(--assist-purple); }
+        .t-main .node-card::before { background: var(--primary-blue); }
+        .t-spec .node-card::before { background: var(--spec-cyan); }
+        .node-card:hover { transform: translateY(-2px); border-color: currentColor; }
+        .node-card.current {
+            background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        .node-card.current::before { background: white; }
+        .node-card.current::after {
+            content: '当前'; position: absolute; top: -8px; right: -5px;
+            background: #f59e0b; color: white; font-size: 9px; padding: 1px 5px; border-radius: 10px;
+        }
+        .node-card.active { border-color: var(--primary-blue); box-shadow: 0 0 0 2px var(--primary-blue); transform: scale(1.05); z-index: 20; }
+        .level-mark { position: absolute; right: -40px; font-size: 11px; color: #cbd5e1; font-family: monospace; font-weight: bold; text-align: left; width: 30px; }
+
+        /* Arrows */
+        .arrow-vertical { position: absolute; right: -60px; top: 40px; bottom: 40px; width: 20px; display: flex; flex-direction: column; align-items: center; }
+        .arrow-v-line { width: 4px; flex: 1; border-radius: 4px; background: linear-gradient(to top, var(--primary-blue), rgba(59, 130, 246, 0.1)); position: relative; }
+        .arrow-v-line::before { content: ''; position: absolute; top: -2px; left: -4px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 10px solid var(--primary-blue); }
+        .arrow-v-text { position: absolute; top: 0; left: 15px; white-space: nowrap; font-size: 12px; color: var(--primary-blue); font-weight: bold; letter-spacing: 2px; }
+
+        .arrow-horizontal { position: absolute; bottom: -45px; left: 0; right: 0; height: 40px; display: flex; align-items: center; justify-content: flex-end; padding-right: 150px; }
+        .arrow-h-line { height: 4px; width: 100%; border-radius: 4px; background: linear-gradient(to left, var(--spec-cyan), rgba(6, 182, 212, 0.05)); position: relative; }
+        .arrow-h-line::after { content: ''; position: absolute; left: -2px; top: -4px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 10px solid var(--spec-cyan); }
+        .arrow-h-text { position: absolute; left: 0; top: 20px; font-size: 12px; color: var(--spec-cyan); font-weight: bold; letter-spacing: 1px; white-space: nowrap; }
+
+        /* --- Popups --- */
+        .pop-card {
+            position: absolute; width: 340px;
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.8); border-radius: 14px;
+            box-shadow: var(--shadow-lg); opacity: 0; visibility: hidden; transform: translateY(10px) scale(0.98);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100;
+        }
+        .pop-card.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+        .pc-header { padding: 10px 15px; background: linear-gradient(to right, #f8fafc, #fff); border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .pc-info h4 { margin: 0; font-size: 11px; color: var(--text-sub); font-weight: normal; }
+        .pc-info h3 { margin: 2px 0 0; font-size: 14px; color: var(--text-main); font-weight: 700; }
+        .pc-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .req-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; transition: border-color 0.2s; }
+        .req-item.met { border-left: 3px solid var(--success-bg); }
+        .req-item.unmet { border-left: 3px solid var(--danger-bg); background: #fffafa; }
+        .req-content { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+        .req-label { font-size: 11px; color: #94a3b8; }
+        .req-val { font-size: 12px; font-weight: 600; color: var(--text-main); line-height: 1.4; }
+        .req-current { font-size: 10px; color: var(--danger-text); margin-top: 2px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .req-current::before { content: '当前:'; opacity: 0.7; font-weight: normal; }
+        .req-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 12px; margin-left: 8px; margin-top: 2px; white-space: nowrap; }
+        .bg-success { background: var(--success-bg); color: var(--success-text); }
+        .bg-fail { background: var(--danger-bg); color: var(--danger-text); }
+
+        .expert-card { width: 340px; border: 1px solid rgba(245, 158, 11, 0.3); background: linear-gradient(135deg, #fffbeb 0%, #fff 100%); }
+        .expert-card .pc-info h3 { color: #b45309; }
+        .expert-card .req-val { font-size: 11px; font-weight: normal; color: #334155; }
+        .expert-card .req-label { font-weight: bold; color: #b45309; }
+
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="dashboard-card">
+        <div class="user-profile">
+            <div class="avatar-box">张</div>
+            <div class="user-info">
+                <h2>张三</h2>
+                <p>变电管理一所 / 安全监管部</p>
+                <div style="margin-top: 4px;">
+                    <span class="capsule capsule-blue">15级</span>
+                    <span class="capsule capsule-blue">三级技能工程师</span>
+                </div>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item"><span class="stat-label">学历 / 职称</span><span class="stat-value">本科 / <span style="color:#2563eb">中级</span></span></div>
+            <div class="stat-item"><span class="stat-label">技能等级</span><span class="stat-value">无</span></div>
+            <div class="stat-item"><span class="stat-label">本岗工作时长</span><span class="stat-value highlight">2年</span></div>
+            <div class="stat-item span-3">
+                <span class="stat-label">近三年年度绩效结果</span>
+                <span class="stat-value highlight">2022年B+  &nbsp; 2023年B+  &nbsp; 2024年A</span>
+            </div>
+            <div class="stat-item span-3">
+                <span class="stat-label">近三年所获荣誉 (包括劳动竞赛和奖励)</span>
+                <div class="stat-value long-text">2024年 全国电力行业职业技能竞赛 团体三等<br>2023年 年度安全生产先进个人</div>
+            </div>
+            <div class="stat-item span-3">
+                <span class="stat-label">近一年季度绩效结果</span>
+                <span class="stat-value highlight">一季度B+ &nbsp; 二季度B &nbsp; 三季度A &nbsp; 四季度B+</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stage-wrapper">
+    <div class="stage-content">
+        <!-- 轨道布局 -->
+        <div class="tracks-layout">
+            
+            <!-- 1. 专责 (最左) -->
+            <div class="track-col t-spec" id="track-spec">
+                <div class="track-line"></div>
+                <div class="track-footer">专责</div>
+            </div>
+
+            <!-- 2. 助理 (中间) -->
+            <div class="track-col t-assist" id="track-assist">
+                <div class="track-line"></div>
+                <div class="track-footer">助理专责</div>
+            </div>
+
+            <!-- 3. 500KV (最右) -->
+            <div class="track-col t-main" id="track-main">
+                <div class="track-line"></div>
+                <div class="track-footer">500KV巡维中心</div>
+            </div>
+
+            <!-- 右侧：纵向晋升箭头 -->
+            <div class="arrow-vertical">
+                <div class="arrow-v-text">职级晋升</div>
+                <div class="arrow-v-line"></div>
+            </div>
+
+            <!-- 底部：横向转岗箭头 -->
+            <div class="arrow-horizontal">
+                <div class="arrow-h-text">专业转岗</div>
+                <div class="arrow-h-line"></div>
+            </div>
+        </div>
+
+        <!-- 弹窗挂载点 -->
+        <div id="popupLayer"></div>
+    </div>
+</div>
+
+<script>
+    const minLevel = 12;
+    const maxLevel = 22;
+
+    const careerPaths = [
+        { level: 22, name: '站长', type: 'main' },
+        { level: 21, name: '副站长', type: 'main' },
+        { level: 21, name: '高级专责', type: 'spec' },
+        { level: 20, name: '一级专责', type: 'spec' },
+        { level: 19, name: '值班长', type: 'main' },
+        { level: 19, name: '资深技能工程师', type: 'main' },
+        { level: 19, name: '二级专责', type: 'spec' },
+        { level: 18, name: '副值班长', type: 'main' },
+        { level: 18, name: '高级技能工程师', type: 'main' },
+        { level: 18, name: '一级助责', type: 'assist' },
+        { level: 18, name: '三级专责', type: 'spec' },
+        { level: 17, name: '一级技能工程师', type: 'main' },
+        { level: 17, name: '二级助责', type: 'assist' },
+        { level: 16, name: '二级技能工程师', type: 'main' },
+        { level: 16, name: '三级助责', type: 'assist' },
+        { level: 15, name: '三级技能工程师', type: 'main', isCurrent: true },
+        { level: 15, name: '四级助责', type: 'assist' },
+        { level: 14, name: '一级作业员', type: 'main' },
+        { level: 14, name: '五级助责', type: 'assist' },
+        { level: 13, name: '二级作业员', type: 'main' },
+        { level: 13, name: '六级助责', type: 'assist' },
+        { level: 12, name: '三级作业员', type: 'main' },
+    ];
+
+    const requirementsDB = {
+        '二级技能工程师': [
+            { label: '学历要求', val: '本科及以上', current: '本科', met: true },
+            { label: '职称要求', val: '中级工程师', current: '中级工程师', met: true },
+            { label: '绩效要求', val: '近三年无C', current: '符合', met: true },
+            { label: '工作经验', val: '本岗满3年', current: '本岗2年', met: false }
+        ],
+        '四级助责': [
+            { label: '学历要求', val: '本科及以上', current: '本科', met: true },
+            { label: '职称要求', val: '助理工程师', current: '中级工程师', met: true }, 
+            { label: '绩效要求', val: '近一年B级以上', current: '符合', met: true },
+            { label: '工作经验', val: '相关经历1年', current: '本岗2年', met: true }
+        ],
+        '专家选拔': [
+            { label: '业务方向', val: '从事公司核心业务', current: '符合', met: true },
+            { label: '岗级要求', val: '报名岗级（专家岗级或者岗位岗级）与报名专家层级对应岗级差距原则上不超3岗（技能人才最低专家19级，技术人才最低专家21级）', current: '当前15级 vs 最低19级 (差4岗)', met: false },
+            { label: '绩效要求', val: '近3年的个人年度或季度绩效考核结果均为B级及以上，且至少获得一次A级', current: '2022(B+) 2023(B+) 2024(A)', met: true }
+        ],
+        'default': [
+            { label: '学历要求', val: '本科及以上', current: '本科', met: true },
+            { label: '职称要求', val: '相关职称', current: '待定', met: false },
+            { label: '绩效要求', val: '绩效达标', current: '达标', met: true },
+            { label: '工作经验', val: '年限达标', current: '不足', met: false }
+        ]
+    };
+
+    const tracks = {
+        main: document.getElementById('track-main'),
+        assist: document.getElementById('track-assist'),
+        spec: document.getElementById('track-spec')
+    };
+    const popupLayer = document.getElementById('popupLayer');
+
+    function renderStage() {
+        for (let i = minLevel; i <= maxLevel; i++) {
+            ['spec', 'assist', 'main'].forEach(type => {
+                const nodes = careerPaths.filter(p => p.type === type && p.level === i);
+                const slot = document.createElement('div');
+                slot.className = 'node-slot';
+                
+                if (type === 'main') {
+                    const mark = document.createElement('span');
+                    mark.className = 'level-mark';
+                    mark.innerText = `${i}级`;
+                    slot.appendChild(mark);
+                }
+
+                nodes.forEach(node => {
+                    const btn = document.createElement('div');
+                    const isSplit = nodes.length > 1;
+                    btn.className = `node-card ${node.isCurrent ? 'current' : ''} ${isSplit ? 'split-mode' : ''}`;
+                    if(node.isCurrent) btn.id = 'currentNode';
+                    btn.innerText = node.name;
+                    btn.onclick = (e) => { e.stopPropagation(); handleClick(btn, node, isSplit); };
+                    slot.appendChild(btn);
+                });
+                tracks[type].appendChild(slot);
+            });
+        }
+    }
+
+    function createCard(title, roleName, reqs, isExpert) {
+        const list = reqs.map(r => `
+            <div class="req-item ${r.met ? 'met' : 'unmet'}">
+                <div class="req-content">
+                    <span class="req-label">${r.label}</span>
+                    <div class="req-val">${r.val}</div>
+                    ${ !r.met ? `<div class="req-current">${r.current}</div>` : '' }
+                </div>
+                <div class="req-badge ${r.met ? 'bg-success' : 'bg-fail'}">
+                    ${r.met ? '<i class="ri-checkbox-circle-fill"></i>' : '<i class="ri-close-circle-fill"></i>'}
+                </div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="pop-card ${isExpert?'expert-card':''} show" onclick="event.stopPropagation()">
+                <div class="pc-header">
+                    <div class="pc-info">
+                        <h4>${title}</h4>
+                        <h3>${roleName}</h3>
+                    </div>
+                </div>
+                <div class="pc-body">${list}</div>
+            </div>
+        `;
+    }
+
+    // customTop: 如果设置，则相对于节点顶部进行偏移。如果不设置，默认为节点顶部上方 80px
+    function showPopup(el, title, roleName, offsetX = 0, append = false, customTop = null) {
+        if (!append) popupLayer.innerHTML = ''; 
+        
+        const reqs = requirementsDB[roleName] || requirementsDB['default'];
+        const isExpert = (title.includes('专家'));
+        
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = createCard(title, roleName, reqs, isExpert);
+        const card = wrapper.firstElementChild;
+        popupLayer.appendChild(card);
+
+        const stageRect = document.querySelector('.stage-content').getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        
+        // 计算 Top
+        let top = rect.top - stageRect.top;
+        if (customTop !== null) {
+             top = top + customTop; 
+        } else {
+             // 默认比原来更高 (原 -30, 现 -80)
+             top = top - 80; 
+        }
+
+        // 计算 Left
+        let left = 0;
+        if (offsetX > 0) {
+            // 向右打开 (Gap 20px)
+            left = rect.right - stageRect.left + 20;
+        } else {
+            // 向左打开 (Width 340 + Gap 20 = 360)
+            left = rect.left - stageRect.left - 360; 
+        }
+
+        card.style.top = `${top}px`;
+        card.style.left = `${left}px`;
+    }
+
+    function handleClick(el, data, isSplit) {
+        document.querySelectorAll('.node-card').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+        
+        // --- 逻辑分支 ---
+
+        // 1. 三级技能工程师 (Current)
+        if (data.name === '三级技能工程师') {
+            popupLayer.innerHTML = ''; // 清空
+            
+            // 专家模块 (右侧, 很高)
+            // customTop -400 确保在最上方
+            showPopup(el, '人才发展', '专家选拔', 20, true, -400); 
+
+            // 晋升模块 (右侧, 中间)
+            // customTop -50 接近节点位置
+            showPopup(el, '本路线晋升需满足', '二级技能工程师', 20, true, -50); 
+
+            // 转岗模块 (左侧, 中下)
+            // customTop -50 与晋升模块对齐，但在左侧
+            showPopup(el, '转岗需满足', '四级助责', -20, true, -50);
+            
+            return;
+        }
+
+        // 2. 值班长 / 副值班长 -> 向左打开
+        if (data.name === '值班长' || data.name === '副值班长') {
+            showPopup(el, '岗位准入标准', data.name, -10, false);
+            return;
+        }
+
+        // 3. 500KV 主线其他岗位 -> 向右打开
+        if (data.type === 'main') {
+            showPopup(el, '岗位准入标准', data.name, 10, false);
+            return;
+        }
+
+        // 4. 其他路线 -> 向右打开
+        showPopup(el, '岗位准入标准', data.name, 10, false);
+    }
+
+    window.onload = () => {
+        renderStage();
+        const curBtn = document.getElementById('currentNode');
+        if (curBtn) {
+            curBtn.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            setTimeout(() => {
+                handleClick(curBtn, { name: '三级技能工程师', isCurrent: true, type: 'main' }, false);
+            }, 600);
+        }
+    };
+
+    document.addEventListener('click', () => {
+        popupLayer.innerHTML = '';
+        document.querySelectorAll('.node-card').forEach(n => n.classList.remove('active'));
+    });
+
+</script>
+</body>
+</html>
